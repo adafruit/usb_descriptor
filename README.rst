@@ -2,8 +2,8 @@
 Introduction
 ============
 
-.. image:: https://readthedocs.org/projects/adafruit_usb_descriptor/badge/?version=latest
-    :target: https://circuitpython.readthedocs.io/projects/usb_descriptor/en/latest/
+.. image:: https://readthedocs.org/projects/adafruit-usb-descriptor/badge/?version=latest
+    :target: http://adafruit-usb-descriptor.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
 .. image :: https://img.shields.io/discord/327254708534116352.svg
