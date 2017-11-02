@@ -23,8 +23,7 @@ Usage Example
 
 .. code-block:: python
 
-    from adafruit_usb_descriptor import standard
-    from adafruit_usb_descriptor import cdc
+    from adafruit_usb_descriptor import cdc, standard, util
 
     # langid must always be first
     langid = standard.StringDescriptor("\u0409")
@@ -90,7 +89,7 @@ Usage Example
         )
     ]
 
-    interfaces = standard.join_interfaces(cdc_interfaces, msc_interfaces)
+    interfaces = util.join_interfaces(cdc_interfaces, msc_interfaces)
 
     cdc_function = standard.InterfaceAssociationDescriptor(
         bFirstInterface=interfaces.index(cdc_interfaces[0]),
