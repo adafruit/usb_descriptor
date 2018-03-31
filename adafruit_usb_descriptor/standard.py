@@ -21,18 +21,14 @@
 # THE SOFTWARE.
 
 import struct
-from . import core
 
+from . import util
 
-class EndpointDescriptor(core.Descriptor):
+class EndpointDescriptor:
     """Single endpoint configuration"""
-    fields = [('bEndpointAddress', "B", None),
-              ('bmAttributes', "B", None),
-              ('wMaxPacketSize', "H", 0x40),
-              ('bInterval', "B", 0)]
-
-    bLength = 0x07
     bDescriptorType = 0x5
+    fmt = "<BB" + "BBHB"
+    bLength = struct.calcsize(fmt)
 
     TYPE_CONTROL = 0b00
     TYPE_ISOCHRONOUS = 0b01
@@ -41,38 +37,61 @@ class EndpointDescriptor(core.Descriptor):
 
     DIRECTION_IN =  0x80
     DIRECTION_OUT = 0x00
+    DIRECTION_MASK = DIRECTION_IN | DIRECTION_OUT
+    NUMBER_MASK = ~DIRECTION_MASK
 
-    @property
-    def bEndpointAddress(self):
-        return self.data[0]
+    def __init__(self, *,
+                 description,
+                 bEndpointAddress,
+                 bmAttributes,
+                 wMaxPacketSize=0x40,
+                 bInterval=0):
+        self.description = description
+        self.bEndpointAddress = bEndpointAddress
+        self.bmAttributes = bmAttributes
+        self.wMaxPacketSize = wMaxPacketSize
+        self.bInterval = bInterval
 
-    @bEndpointAddress.setter
-    def bEndpointAddress(self, value):
-        self.data[0] = value
+    def __bytes__(self):
+        return struct.pack(self.fmt,
+                           self.bLength,
+                           self.bDescriptorType,
+                           self.bEndpointAddress,
+                           self.bmAttributes,
+                           self.wMaxPacketSize,
+                           self.bInterval)
 
 
-class InterfaceDescriptor(core.Descriptor):
+class InterfaceDescriptor:
     """Single interface that includes ``subdescriptors`` such as endpoints.
 
     ``subdescriptors`` can also include other class and vendor specific
     descriptors. They are serialized in order after the `InterfaceDescriptor`.
+    They have their own bLength, and are not included in this descriptor's bLength.
     """
-    fields = [('bInterfaceNumber', "B", 0),
-              ('bAlternateSetting', "B", 0),
-              ('bNumEndpoints', "B", 0),
-              ('bInterfaceClass', "B", None),
-              ('bInterfaceSubClass', "B", 0),
-              ('bInterfaceProtocol', "B", 0),
-              ('iInterface', "B", 0)]
-
-    bLength = 0x09
     bDescriptorType = 0x4
+    fmt = "<BB" + "B"*7
+    bLength = struct.calcsize(fmt)
 
-    def __init__(self, *args, **kwargs):
-        self.subdescriptors = []
-        if "subdescriptors" in kwargs:
-            self.subdescriptors = kwargs["subdescriptors"]
-        super().__init__(*args, **kwargs)
+    def __init__(self, *,
+                 description,
+                 bInterfaceNumber=0,
+                 bAlternateSetting=0,
+                 bNumEndpoints=0,
+                 bInterfaceClass,
+                 bInterfaceSubClass=0,
+                 bInterfaceProtocol=0,
+                 iInterface=0,
+                 subdescriptors=[]):
+        self.description = description
+        self.bInterfaceNumber = bInterfaceNumber
+        self.bAlternateSetting = bAlternateSetting
+        self.bNumEndpoints = bNumEndpoints
+        self.bInterfaceClass = bInterfaceClass
+        self.bInterfaceSubClass = bInterfaceSubClass
+        self.bInterfaceProtocol = bInterfaceProtocol
+        self.iInterface = iInterface
+        self.subdescriptors = subdescriptors
 
     def __bytes__(self):
         endpoint_count = 0
@@ -81,75 +100,153 @@ class InterfaceDescriptor(core.Descriptor):
             subdescriptor_bytes.append(bytes(desc))
             if desc.bDescriptorType == EndpointDescriptor.bDescriptorType:
                 endpoint_count += 1
-        subdescriptor_bytes = b"".join(subdescriptor_bytes)
-        self.data[2] = endpoint_count
-        return super().__bytes__() + subdescriptor_bytes
+        self.bNumEndpoints = endpoint_count
+        initial_bytes = struct.pack(self.fmt,
+                                    self.bLength,
+                                    self.bDescriptorType,
+                                    self.bInterfaceNumber,
+                                    self.bAlternateSetting,
+                                    self.bNumEndpoints,
+                                    self.bInterfaceClass,
+                                    self.bInterfaceSubClass,
+                                    self.bInterfaceProtocol,
+                                    self.iInterface)
+        return initial_bytes + b''.join(subdescriptor_bytes)
 
-    @property
-    def bInterfaceNumber(self):
-        return self.data[0]
 
-    @bInterfaceNumber.setter
-    def bInterfaceNumber(self, value):
-        self.data[0] = value
-
-
-class InterfaceAssociationDescriptor(core.Descriptor):
+class InterfaceAssociationDescriptor:
     """Groups interfaces into a single function"""
-    fields = [('bFirstInterface', "B", None),
-              ('bInterfaceCount', "B", None),
-              ('bFunctionClass', "B", None),
-              ('bFunctionSubClass', "B", None),
-              ('bFunctionProtocol', "B", None),
-              ('iFunction', "B", 0)]
-
-    bLength = 0x08
     bDescriptorType = 0xB
+    fmt = "<BB" + "B"*6
+    bLength = struct.calcsize(fmt)
+
+    def __init__(self, *,
+                 description,
+                 bFirstInterface,
+                 bInterfaceCount,
+                 bFunctionClass,
+                 bFunctionSubClass,
+                 bFunctionProtocol,
+                 iFunction = 0):
+        self.description = description
+        self.bFirstInterface = bFirstInterface
+        self.bInterfaceCount = bInterfaceCount
+        self.bFunctionClass = bFunctionClass
+        self.bFunctionSubClass = bFunctionSubClass
+        self.bFunctionProtocol = bFunctionProtocol
+        self.iFunction = iFunction
+
+    def __bytes__(self):
+        return struct.pack(self.fmt,
+                           self.bLength,
+                           self.bDescriptorType,
+                           self.bFirstInterface,
+                           self.bInterfaceCount,
+                           self.bFunctionClass,
+                           self.bFunctionSubClass,
+                           self.bFunctionProtocol,
+                           self.iFunction)
 
 
-class ConfigurationDescriptor(core.Descriptor):
+class ConfigurationDescriptor:
     """High level configuration that prepends the interfaces."""
-    fields = [('wTotalLength', "H", None),
-              ('bNumInterfaces', "B", None),
-              ('bConfigurationValue', "B", 0x1),
-              ('iConfiguration', "B", 0),
-              # bus powered (bit 6), no remote wakeup (bit 5),
-              # bit 7 is always 1 and 0-4 are always 0
-              ('bmAttributes', "B", 0x80),
-              # 100 mA by default
-              ('bMaxPower', "B", 50)]
-
-    bLength = 0x09
     bDescriptorType = 0x2
+    fmt = "<BB" + "HBBBBB"
+    bLength = struct.calcsize(fmt)
+
+    def __init__(self, *,
+                 description,
+                 wTotalLength,
+                 bNumInterfaces,
+                 bConfigurationValue=0x1,
+                 iConfiguration=0,
+                 # bus powered (bit 6), no remote wakeup (bit 5),
+                 # bit 7 is always 1 and 0-4 are always 0
+                 bmAttributes=0x80,
+                 # 100 mA by default (50 means 100ma)
+                 bMaxPower=50):
+        self.description = description
+        self.wTotalLength = wTotalLength
+        self.bNumInterfaces = bNumInterfaces
+        self.bConfigurationValue = bConfigurationValue
+        self.iConfiguration = iConfiguration
+        self.bmAttributes = bmAttributes
+        self.bMaxPower = bMaxPower
+
+    def __bytes__(self):
+        return struct.pack(self.fmt,
+                           self.bLength,
+                           self.bDescriptorType,
+                           self.wTotalLength,
+                           self.bNumInterfaces,
+                           self.bConfigurationValue,
+                           self.iConfiguration,
+                           self.bmAttributes,
+                           self.bMaxPower)
 
 
-class DeviceDescriptor(core.Descriptor):
-    """Holds basic device level info.
-    """
-    fields = [('bcdUSB', "H", 0x200),
-              ('bDeviceClass', "B", 0xef),
-              ('bDeviceSubClass', "B", 0x02),
-              ('bDeviceProtocol', "B", 0x01),
-              ('bMaxPacketSize0', "B", 0x40),
-              ('idVendor', "H", None),
-              ('idProduct', "H", None),
-              ('bcdDevice', "H", 0x100),
-              ('iManufacturer', "B", None),
-              ('iProduct', "B", None),
-              ('iSerialNumber', "B", None),
-              ('bNumConfigurations', "B", 1)]
-
-    bLength = 0x12
+class DeviceDescriptor:
+    """Holds basic device level info."""
     bDescriptorType = 0x1
+    fmt = "<BB" + "HBBBBHHHBBBB"
+    bLength = struct.calcsize(fmt)
+
+    def __init__(self, *,
+                 description="unknown DeviceDescriptor",
+                 bcdUSB=0x200,
+                 bDeviceClass=0x00,
+                 bDeviceSubClass=0x00,
+                 bDeviceProtocol=0x00,
+                 bMaxPacketSize=0x40,
+                 idVendor,
+                 idProduct,
+                 bcdDevice=0x100,
+                 iManufacturer,
+                 iProduct,
+                 iSerialNumber,
+                 bNumConfigurations=1):
+        self.description = description
+        self.bcdUSB = bcdUSB
+        self.bDeviceClass = bDeviceClass
+        self.bDeviceSubClass = bDeviceSubClass
+        self.bDeviceProtocol = bDeviceProtocol
+        self.bMaxPacketSize = bMaxPacketSize
+        self.idVendor = idVendor
+        self.idProduct = idProduct
+        self.bcdDevice = bcdDevice
+        self.iManufacturer = iManufacturer
+        self.iProduct = iProduct
+        self.iSerialNumber = iSerialNumber
+        self.bNumConfigurations = bNumConfigurations
+
+    def __bytes__(self):
+        return struct.pack(self.fmt,
+                           self.bLength,
+                           self.bDescriptorType,
+                           self.bcdUSB,
+                           self.bDeviceClass,
+                           self.bDeviceSubClass,
+                           self.bDeviceProtocol,
+                           self.bMaxPacketSize,
+                           self.idVendor,
+                           self.idProduct,
+                           self.bcdDevice,
+                           self.iManufacturer,
+                           self.iProduct,
+                           self.iSerialNumber,
+                           self.bNumConfigurations)
 
 
 class StringDescriptor:
     """Holds a string referenced by another descriptor by index.
 
-       Its recommended to hold these in a list and use ``index`` in subsequent
+       It's recommended to hold these in a list and use ``index`` in subsequent
        descriptors to link to them.
     """
+    bDescriptorType = 0x03
+
     def __init__(self, value):
+        self.description = '"{}"'.format(value)
         if type(value) == str:
             self._bString = value.encode("utf-16-le")
             self._bLength = len(self._bString) + 2
@@ -171,10 +268,6 @@ class StringDescriptor:
     def bString(self, value):
         self._bString = value.encode("utf-16-le")
         self._bLength = len(self.encoded) + 2
-
-    @property
-    def bDescriptorType(self):
-        return 3
 
     @property
     def bLength(self):
