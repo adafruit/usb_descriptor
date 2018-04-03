@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-from . import core
+from . import util
 import struct
 
 """
@@ -33,59 +33,129 @@ This PDF is a good reference:
 * Author(s): Scott Shawcroft
 """
 
+CDC_CLASS_DEVICE = 0x02
+CDC_CLASS_COMM = 0x02
+CDC_CLASS_DATA = 0x0A
 
-class FunctionalDescriptor(core.Descriptor):
-    """Common functional descriptor parent. Subclasses must specify
-       bDescriptorSubtype in addition to the fields needed by
-       `core.Descriptor`.
-    """
+CDC_SUBCLASS_DLCM = 0x01
+CDC_SUBCLASS_ACM = 0x02  # Abstract Control Model
+CDC_SUBCLASS_TCM = 0x03
+CDC_SUBCLASS_MCCM = 0x04
+CDC_SUBCLASS_CCM = 0x05
+CDC_SUBCLASS_ETH = 0x06
+CDC_SUBCLASS_ATM = 0x07
+
+CDC_PROTOCOL_V25TER = 0x01   # Common AT commands
+# Many other protocols omitted.
+
+class Header:
     bDescriptorType = 0x24
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fmt = "<BBB" + self.fmt[3:]
-
-    def __bytes__(self):
-        return struct.pack(self.fmt, self.bLength, self.bDescriptorType,
-                           self.bDescriptorSubtype, *self.data)
-
-
-class Header(FunctionalDescriptor):
-    fields = [('bcdCDC', "H", None)]
-    bLength = 0x05
-    bDescriptorSubtype = 0x0
-
-
-class CallManagement(FunctionalDescriptor):
-    fields = [('bmCapabilities', "b", None),
-              ('bDataInterface', "b", None)]
-    bLength = 0x05
     bDescriptorSubtype = 0x01
+    fmt = "<BBB" + "H"
+    bLength = struct.calcsize(fmt)
 
-
-class AbstractControlManagement(FunctionalDescriptor):
-    fields = [('bmCapabilities', "b", None)]
-    bLength = 0x04
-    bDescriptorSubtype = 0x02
-
-
-class DirectLineManagement(FunctionalDescriptor):
-    fields = [('bmCapabilities', "b", None)]
-    bLength = 0x04
-    bDescriptorSubtype = 0x03
-
-
-class Union(FunctionalDescriptor):
-    fields = [('bMasterInterface', "b", None)]
-    bDescriptorSubtype = 0x06
-
-    def __init__(self, *args, **kwargs):
-        self.bSlaveInterface = kwargs["bSlaveInterface"]
-        super().__init__(*args, **kwargs)
+    def __init__(self, *,
+                 description,
+                 bcdCDC):
+        self.description = description
+        self.bcdCDC = bcdCDC
 
     def __bytes__(self):
-        return super().__bytes__() + bytes(self.bSlaveInterface)
+        return struct.pack(self.fmt,
+                           self.bLength,
+                           self.bDescriptorType,
+                           self.bDescriptorSubtype,
+                           self.bcdCDC)
+
+
+class CallManagement:
+    bDescriptorType = 0x24
+    bDescriptorSubtype = 0x01
+    fmt = "<BBB" + "BB"
+    bLength = struct.calcsize(fmt)
+
+    def __init__(self, *,
+                 description,
+                 bmCapabilities,
+                 bDataInterface):
+        self.description = description
+        self.bmCapabilities = bmCapabilities
+        self.bDataInterface = bDataInterface
+
+    def __bytes__(self):
+        return struct.pack(self.fmt,
+                           self.bLength,
+                           self.bDescriptorType,
+                           self.bDescriptorSubtype,
+                           self.bmCapabilities,
+                           self.bDataInterface)
+
+
+class AbstractControlManagement:
+    bDescriptorType = 0x24
+    bDescriptorSubtype = 0x02
+    fmt = "<BBB" + "B"
+    bLength = struct.calcsize(fmt)
+
+    def __init__(self, *,
+                 description,
+                 bmCapabilities):
+        self.description = description
+        self.bmCapabilities = bmCapabilities
+
+
+    def __bytes__(self):
+        return struct.pack(self.fmt,
+                           self.bLength,
+                           self.bDescriptorType,
+                           self.bDescriptorSubtype,
+                           self.bmCapabilities)
+
+
+
+class DirectLineManagement:
+    bDescriptorType = 0x24
+    bDescriptorSubtype = 0x03
+    fmt = "<BBB" + "B"
+    bLength = struct.calcsize(fmt)
+
+    def __init__(self, *,
+                 description,
+                 bmCapabilities):
+        self.description = description
+        self.bmCapabilities = bmCapabilities
+
+
+    def __bytes__(self):
+        return struct.pack(self.fmt,
+                           self.bLength,
+                           self.bDescriptorType,
+                           self.bDescriptorSubtype,
+                           self.bmCapabilities)
+
+
+class Union:
+    bDescriptorType = 0x24
+    bDescriptorSubtype = 0x06
+    fixed_fmt = "<BBB" + "B"     # not including bSlaveInterface_list
+    fixed_bLength = struct.calcsize(fixed_fmt)
 
     @property
     def bLength(self):
-        return 0x4 + len(self.bSlaveInterface)
+        return self.fixed_bLength + len(self.bSlaveInterface_list)
+
+    def __init__(self, *,
+                 description,
+                 bMasterInterface,
+                 bSlaveInterface_list):
+        self.description = description
+        self.bMasterInterface = bMasterInterface
+        # bSlaveInterface_list is a list of one or more slave interfaces.
+        self.bSlaveInterface_list = bSlaveInterface_list
+
+    def __bytes__(self):
+        return struct.pack(self.fixed_fmt,
+                           self.bLength,
+                           self.bDescriptorType,
+                           self.bDescriptorSubtype,
+                           self.bMasterInterface) + bytes(self.bSlaveInterface_list)
