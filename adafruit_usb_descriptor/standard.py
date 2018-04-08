@@ -22,8 +22,6 @@
 
 import struct
 
-from . import util
-
 class EndpointDescriptor:
     """Single endpoint configuration"""
     bDescriptorType = 0x5
