@@ -240,7 +240,7 @@ class DeviceDescriptor:
 class StringDescriptor:
     """Holds a string referenced by another descriptor by index.
 
-       It's recommended to hold these in a list and use ``index`` in subsequent
+       It's recommended to hold these in a dict or list and look them up in subsequent
        descriptors to link to them.
     """
     bDescriptorType = 0x03

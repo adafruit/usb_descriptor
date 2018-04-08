@@ -37,7 +37,7 @@ HID_CLASS = 0x03
 HID_SUBCLASS_NOBOOT = 0x00
 HID_SUBCLASS_BOOT = 0x01
 
-HID_PROTOCOL_GENERIC = 0x00
+HID_PROTOCOL_NONE = 0x00
 HID_PROTOCOL_KEYBOARD = 0x01
 HID_PROTOCOL_MOUSE = 0x02
 
@@ -48,8 +48,8 @@ class HIDDescriptor:
     bLength = struct.calcsize(fmt)
 
     def __init__(self, *,
-                 description="unknown HIDDescriptor",
-                 bcdHID=0x1101,
+                 description,
+                 bcdHID=0x0111,
                  bCountryCode=0x0,
                  bNumDescriptors=1,
                  bDescriptorType_Class=0x22,
@@ -76,7 +76,7 @@ class ReportDescriptor:
     """
 
     def __init__(self, *,
-                 description="unknown ReportDescriptor",
+                 description,
                  report_descriptor):
         self.description = description
         self.report_descriptor = report_descriptor
@@ -119,7 +119,7 @@ ReportDescriptor.GENERIC_MOUSE_REPORT = ReportDescriptor(
 ReportDescriptor.GENERIC_KEYBOARD_REPORT = ReportDescriptor(
     description="GENERIC_KEYBOARD_REPORT",
     report_descriptor=bytes([
-    0x05, 0x01,     # Usage Page (Generic Desktop)
+        0x05, 0x01,     # Usage Page (Generic Desktop)
         0x09, 0x06,     # Usage (Keyboard)
         0xA1, 0x01,     # Collection (Application)
         0x05, 0x07,     # Usage Page (Keyboard)
@@ -175,41 +175,41 @@ ReportDescriptor.MOUSE_KEYBOARD_CONSUMER_SYS_CONTROL_REPORT = ReportDescriptor(
         0x05, 0x01,                 # Usage Page (Generic Desktop)
         0x09, 0x06,                 # Usage (Keyboard)
         0xA1, 0x01,                 # Collection (Application)
-        0x85, ReportDescriptor.REPORT_IDS["KEYBOARD"], # Report ID (1)
-        0x05, 0x07,                 # Usage Page (Keyboard)
-        0x19, 224,                  # Usage Minimum (224)
-        0x29, 231,                  # Usage Maximum (231)
-        0x15, 0x00,                 # Logical Minimum (0)
-        0x25, 0x01,                 # Logical Maximum (1)
-        0x75, 0x01,                 # Report Size (1)
-        0x95, 0x08,                 # Report Count (8)
-        0x81, 0x02,                 # Input (Data, Variable, Absolute)
-        0x81, 0x01,                 # Input (Constant)
-        0x19, 0x00,                 # Usage Minimum (0)
-        0x29, 101,                  # Usage Maximum (101)
-        0x15, 0x00,                 # Logical Minimum (0)
-        0x25, 101,                  # Logical Maximum (101)
-        0x75, 0x08,                 # Report Size (8)
-        0x95, 0x06,                 # Report Count (6)
-        0x81, 0x00,                 # Input (Data, Array)
-        0x05, 0x08,                 # Usage Page (LED)
-        0x19, 0x01,                 # Usage Minimum (1)
-        0x29, 0x05,                 # Usage Maximum (5)
-        0x15, 0x00,                 # Logical Minimum (0)
-        0x25, 0x01,                 # Logical Maximum (1)
-        0x75, 0x01,                 # Report Size (1)
-        0x95, 0x05,                 # Report Count (5)
-        0x91, 0x02,                 # Output (Data, Variable, Absolute)
-        0x95, 0x03,                 # Report Count (3)
-        0x91, 0x01,                 # Output (Constant)
+        0x85, ReportDescriptor.REPORT_IDS["KEYBOARD"], #   Report ID (1)
+        0x05, 0x07,                 #   Usage Page (Keyboard)
+        0x19, 224,                  #   Usage Minimum (224)
+        0x29, 231,                  #   Usage Maximum (231)
+        0x15, 0x00,                 #   Logical Minimum (0)
+        0x25, 0x01,                 #   Logical Maximum (1)
+        0x75, 0x01,                 #   Report Size (1)
+        0x95, 0x08,                 #   Report Count (8)
+        0x81, 0x02,                 #   Input (Data, Variable, Absolute)
+        0x81, 0x01,                 #   Input (Constant)
+        0x19, 0x00,                 #   Usage Minimum (0)
+        0x29, 101,                  #   Usage Maximum (101)
+        0x15, 0x00,                 #   Logical Minimum (0)
+        0x25, 101,                  #   Logical Maximum (101)
+        0x75, 0x08,                 #   Report Size (8)
+        0x95, 0x06,                 #   Report Count (6)
+        0x81, 0x00,                 #   Input (Data, Array)
+        0x05, 0x08,                 #   Usage Page (LED)
+        0x19, 0x01,                 #   Usage Minimum (1)
+        0x29, 0x05,                 #   Usage Maximum (5)
+        0x15, 0x00,                 #   Logical Minimum (0)
+        0x25, 0x01,                 #   Logical Maximum (1)
+        0x75, 0x01,                 #   Report Size (1)
+        0x95, 0x05,                 #   Report Count (5)
+        0x91, 0x02,                 #   Output (Data, Variable, Absolute)
+        0x95, 0x03,                 #   Report Count (3)
+        0x91, 0x01,                 #   Output (Constant)
         0xC0,                       # End Collection
         # Regular mouse
         0x05, 0x01,        # Usage Page (Generic Desktop)
         0x09, 0x02,        # Usage (Mouse)
         0xA1, 0x01,        # Collection (Application)
-        0x85, ReportDescriptor.REPORT_IDS["MOUSE"], # Report ID (n)
         0x09, 0x01,        #   Usage (Pointer)
         0xA1, 0x00,        #   Collection (Physical)
+        0x85, ReportDescriptor.REPORT_IDS["MOUSE"], # Report ID (n)
         0x05, 0x09,        #     Usage Page (Button)
         0x19, 0x01,        #     Usage Minimum (0x01)
         0x29, 0x05,        #     Usage Maximum (0x05)
