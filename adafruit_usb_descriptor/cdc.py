@@ -45,12 +45,13 @@ CDC_SUBCLASS_CCM = 0x05
 CDC_SUBCLASS_ETH = 0x06
 CDC_SUBCLASS_ATM = 0x07
 
+CDC_PROTOCOL_NONE = 0x0
 CDC_PROTOCOL_V25TER = 0x01   # Common AT commands
 # Many other protocols omitted.
 
 class Header:
     bDescriptorType = 0x24
-    bDescriptorSubtype = 0x01
+    bDescriptorSubtype = 0x00
     fmt = "<BBB" + "H"
     bLength = struct.calcsize(fmt)
 
