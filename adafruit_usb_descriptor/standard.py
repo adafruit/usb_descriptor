@@ -43,7 +43,7 @@ class EndpointDescriptor:
                  bEndpointAddress,
                  bmAttributes,
                  wMaxPacketSize=0x40,
-                 bInterval=0):
+                 bInterval=0x10):
         self.description = description
         self.bEndpointAddress = bEndpointAddress
         self.bmAttributes = bmAttributes
