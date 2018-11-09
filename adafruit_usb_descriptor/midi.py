@@ -47,6 +47,11 @@ class Header:
     def __init__(self, *, jacks_and_elements=[]):
         self.jacks_and_elements = jacks_and_elements
 
+    def notes(self):
+        notes = [str(self)]
+        for jack in self.jacks_and_elements:
+            notes.extend(jack.notes())
+        return notes
 
     def __bytes__(self):
         for i, element in enumerate(self.jacks_and_elements):
@@ -58,7 +63,6 @@ class Header:
                                      self.bDescriptorType,
                                      self.bDescriptorSubtype,
                                      0x0100,
-                                     self.id,
                                      self.bLength + len(jacks_and_elements_encoded))
         return header_encoded + jacks_and_elements_encoded
 
@@ -76,6 +80,9 @@ class InJackDescriptor:
         self.id = 0 # auto assigned by the parent midi.Header
         self.bJackType = bJackType
         self.iJack = iJack
+
+    def notes(self):
+        return [str(self)]
 
     def __bytes__(self):
         return struct.pack(self.fmt,
@@ -107,6 +114,9 @@ class OutJackDescriptor:
     def bLength(self):
         return self.fixed_bLength + len(self.input_pins) * 2 + 1
 
+    def notes(self):
+        return [str(self)]
+
     def __bytes__(self):
         input_pins = bytearray(len(self.input_pins) * 2)
         for i, input_pin in enumerate(self.input_pins):
@@ -125,6 +135,9 @@ class OutJackDescriptor:
 class ElementDescriptor:
     bDescriptorSubtype = 0x04
 
+    def notes(self):
+        return [str(self)]
+
 class DataEndpointDescriptor:
     bDescriptorType = standard.DESCRIPTOR_TYPE_CLASS_SPECIFIC_INTERFACE
     bDescriptorSubtype = ENDPOINT_DESCRIPTOR_SUBTYPE_GENERAL
@@ -139,9 +152,13 @@ class DataEndpointDescriptor:
     def bLength(self):
         return self.fixed_bLength + len(self.baAssocJack)
 
+    def notes(self):
+        return [str(self)]
+
     def __bytes__(self):
+        baAssocJack = bytes([x.id for x in self.baAssocJack])
         return struct.pack(self.fixed_fmt,
                            self.bLength,
                            self.bDescriptorType,
                            self.bDescriptorSubtype,
-                           len(self.baAssocJack)) + bytes(baAssocJack)
+                           len(self.baAssocJack)) + baAssocJack

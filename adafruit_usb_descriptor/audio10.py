@@ -58,17 +58,26 @@ class AudioControlInterface:
     def bLength(self):
         return self.fixed_bLength + len(self.audio_streaming_interfaces) + len(self.midi_streaming_interfaces)
 
+    def notes(self):
+        notes = [str(self)]
+        for a in self.audio_streaming_interfaces:
+            notes.extend(a.notes())
+        for m in self.midi_streaming_interfaces:
+            notes.extend(m.notes())
+        return notes
+
     def __bytes__(self):
         units_and_terminals = bytes(self.units_and_terminals)
         wTotalLength = self.bLength + len(units_and_terminals)
         baInterfaceNr = bytes([x.bInterfaceNumber for x in self.audio_streaming_interfaces + self.midi_streaming_interfaces])
+        subinterfaces = b''.join(map(bytes, self.audio_streaming_interfaces)) + b''.join(map(bytes, self.midi_streaming_interfaces))
         return struct.pack(self.fixed_fmt,
                            self.bLength,
                            self.bDescriptorType,
                            self.bDescriptorSubtype,
                            self.bcdADC,
                            wTotalLength,
-                           len(baInterfaceNr)) + baInterfaceNr + units_and_terminals
+                           len(baInterfaceNr)) + baInterfaceNr + units_and_terminals + subinterfaces
 
 class TerminalDescriptor:
     bLength = None

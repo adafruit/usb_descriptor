@@ -62,6 +62,9 @@ class Header:
         self.description = description
         self.bcdCDC = bcdCDC
 
+    def notes(self):
+        return [str(self)]
+
     def __bytes__(self):
         return struct.pack(self.fmt,
                            self.bLength,
@@ -84,6 +87,9 @@ class CallManagement:
         self.bmCapabilities = bmCapabilities
         self.bDataInterface = bDataInterface
 
+    def notes(self):
+        return [str(self)]
+
     def __bytes__(self):
         return struct.pack(self.fmt,
                            self.bLength,
@@ -105,6 +111,8 @@ class AbstractControlManagement:
         self.description = description
         self.bmCapabilities = bmCapabilities
 
+    def notes(self):
+        return [str(self)]
 
     def __bytes__(self):
         return struct.pack(self.fmt,
@@ -127,6 +135,8 @@ class DirectLineManagement:
         self.description = description
         self.bmCapabilities = bmCapabilities
 
+    def notes(self):
+        return [str(self)]
 
     def __bytes__(self):
         return struct.pack(self.fmt,
@@ -154,6 +164,9 @@ class Union:
         self.bMasterInterface = bMasterInterface
         # bSlaveInterface_list is a list of one or more slave interfaces.
         self.bSlaveInterface_list = bSlaveInterface_list
+
+    def notes(self):
+        return [str(self)]
 
     def __bytes__(self):
         return struct.pack(self.fixed_fmt,
