@@ -60,6 +60,9 @@ class HIDDescriptor:
         self.bDescriptorType_Class = bDescriptorType_Class
         self.wDescriptorLength = wDescriptorLength
 
+    def notes(self):
+        return [str(self)]
+
     def __bytes__(self):
         return struct.pack(self.fmt,
                            self.bLength,
@@ -79,6 +82,9 @@ class ReportDescriptor:
                  report_descriptor):
         self.description = description
         self.report_descriptor = report_descriptor
+
+    def notes(self):
+        return [str(self)]
 
     def __bytes__(self):
         return self.report_descriptor

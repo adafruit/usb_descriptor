@@ -22,6 +22,8 @@
 
 import struct
 
+from . import standard
+
 """
 CDC specific descriptors
 ========================
@@ -49,7 +51,7 @@ CDC_PROTOCOL_V25TER = 0x01   # Common AT commands
 # Many other protocols omitted.
 
 class Header:
-    bDescriptorType = 0x24
+    bDescriptorType = standard.DESCRIPTOR_TYPE_CLASS_SPECIFIC_INTERFACE
     bDescriptorSubtype = 0x00
     fmt = "<BBB" + "H"
     bLength = struct.calcsize(fmt)
@@ -60,6 +62,9 @@ class Header:
         self.description = description
         self.bcdCDC = bcdCDC
 
+    def notes(self):
+        return [str(self)]
+
     def __bytes__(self):
         return struct.pack(self.fmt,
                            self.bLength,
@@ -69,7 +74,7 @@ class Header:
 
 
 class CallManagement:
-    bDescriptorType = 0x24
+    bDescriptorType = standard.DESCRIPTOR_TYPE_CLASS_SPECIFIC_INTERFACE
     bDescriptorSubtype = 0x01
     fmt = "<BBB" + "BB"
     bLength = struct.calcsize(fmt)
@@ -82,6 +87,9 @@ class CallManagement:
         self.bmCapabilities = bmCapabilities
         self.bDataInterface = bDataInterface
 
+    def notes(self):
+        return [str(self)]
+
     def __bytes__(self):
         return struct.pack(self.fmt,
                            self.bLength,
@@ -92,7 +100,7 @@ class CallManagement:
 
 
 class AbstractControlManagement:
-    bDescriptorType = 0x24
+    bDescriptorType = standard.DESCRIPTOR_TYPE_CLASS_SPECIFIC_INTERFACE
     bDescriptorSubtype = 0x02
     fmt = "<BBB" + "B"
     bLength = struct.calcsize(fmt)
@@ -103,6 +111,8 @@ class AbstractControlManagement:
         self.description = description
         self.bmCapabilities = bmCapabilities
 
+    def notes(self):
+        return [str(self)]
 
     def __bytes__(self):
         return struct.pack(self.fmt,
@@ -114,7 +124,7 @@ class AbstractControlManagement:
 
 
 class DirectLineManagement:
-    bDescriptorType = 0x24
+    bDescriptorType = standard.DESCRIPTOR_TYPE_CLASS_SPECIFIC_INTERFACE
     bDescriptorSubtype = 0x03
     fmt = "<BBB" + "B"
     bLength = struct.calcsize(fmt)
@@ -125,6 +135,8 @@ class DirectLineManagement:
         self.description = description
         self.bmCapabilities = bmCapabilities
 
+    def notes(self):
+        return [str(self)]
 
     def __bytes__(self):
         return struct.pack(self.fmt,
@@ -135,7 +147,7 @@ class DirectLineManagement:
 
 
 class Union:
-    bDescriptorType = 0x24
+    bDescriptorType = standard.DESCRIPTOR_TYPE_CLASS_SPECIFIC_INTERFACE
     bDescriptorSubtype = 0x06
     fixed_fmt = "<BBB" + "B"     # not including bSlaveInterface_list
     fixed_bLength = struct.calcsize(fixed_fmt)
@@ -152,6 +164,9 @@ class Union:
         self.bMasterInterface = bMasterInterface
         # bSlaveInterface_list is a list of one or more slave interfaces.
         self.bSlaveInterface_list = bSlaveInterface_list
+
+    def notes(self):
+        return [str(self)]
 
     def __bytes__(self):
         return struct.pack(self.fixed_fmt,

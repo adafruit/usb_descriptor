@@ -22,6 +22,12 @@
 
 import struct
 
+DESCRIPTOR_TYPE_CLASS_SPECIFIC_DEVICE = 0x21
+DESCRIPTOR_TYPE_CLASS_SPECIFIC_CONFIGURATION = 0x22
+DESCRIPTOR_TYPE_CLASS_SPECIFIC_STRING = 0x23
+DESCRIPTOR_TYPE_CLASS_SPECIFIC_INTERFACE = 0x24
+DESCRIPTOR_TYPE_CLASS_SPECIFIC_ENDPOINT = 0x25
+
 class EndpointDescriptor:
     """Single endpoint configuration"""
     bDescriptorType = 0x5
@@ -49,6 +55,9 @@ class EndpointDescriptor:
         self.bmAttributes = bmAttributes
         self.wMaxPacketSize = wMaxPacketSize
         self.bInterval = bInterval
+
+    def notes(self):
+        return [str(self)]
 
     def __bytes__(self):
         return struct.pack(self.fmt,
@@ -90,6 +99,12 @@ class InterfaceDescriptor:
         self.bInterfaceProtocol = bInterfaceProtocol
         self.iInterface = iInterface
         self.subdescriptors = subdescriptors
+
+    def notes(self):
+        notes = [str(self)]
+        for s in self.subdescriptors:
+            notes.extend(s.notes())
+        return notes
 
     def __bytes__(self):
         endpoint_count = 0
@@ -134,6 +149,9 @@ class InterfaceAssociationDescriptor:
         self.bFunctionProtocol = bFunctionProtocol
         self.iFunction = iFunction
 
+    def notes(self):
+        return [str(self)]
+
     def __bytes__(self):
         return struct.pack(self.fmt,
                            self.bLength,
@@ -170,6 +188,9 @@ class ConfigurationDescriptor:
         self.iConfiguration = iConfiguration
         self.bmAttributes = bmAttributes
         self.bMaxPower = bMaxPower
+
+    def notes(self):
+        return [str(self)]
 
     def __bytes__(self):
         return struct.pack(self.fmt,
@@ -217,6 +238,9 @@ class DeviceDescriptor:
         self.iSerialNumber = iSerialNumber
         self.bNumConfigurations = bNumConfigurations
 
+    def notes(self):
+        return [str(self)]
+
     def __bytes__(self):
         return struct.pack(self.fmt,
                            self.bLength,
@@ -253,6 +277,9 @@ class StringDescriptor:
             if value[1] != 3:
                 raise ValueError("Sequence not a StringDescriptor")
             self._bString = value[2:2+self.bLength]
+
+    def notes(self):
+        return [str(self)]
 
     def __bytes__(self):
         return struct.pack("BB{}s".format(len(self._bString)), self.bLength,
