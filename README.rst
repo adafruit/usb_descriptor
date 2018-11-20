@@ -21,8 +21,7 @@ This library has no external dependencies. It only uses Python `struct`.
 Usage Example
 =============
 
-A current usage example that generates descriptors MicroChip's
-ASF4 can be found `here <https://github.com/adafruit/circuitpython/blob/master/ports/atmel-samd/tools/gen_usb_descriptor.py>`_ in CircuitPython.
+A current usage example that generates descriptors for use with [TinyUSB](https://github.com/hathach/tinyusb) can be found `here <https://github.com/adafruit/circuitpython/blob/master/tools/gen_usb_descriptor.py>`_ in CircuitPython.
 
 Contributing
 ============
