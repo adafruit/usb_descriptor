@@ -63,7 +63,7 @@ class Header:
                                      self.bDescriptorType,
                                      self.bDescriptorSubtype,
                                      0x0100,
-                                     self.bLength + len(jacks_and_elements_encoded))
+                                     self.bLength + len(jacks_and_elements_encoded) + 24)
         return header_encoded + jacks_and_elements_encoded
 
 class InJackDescriptor:
@@ -139,7 +139,7 @@ class ElementDescriptor:
         return [str(self)]
 
 class DataEndpointDescriptor:
-    bDescriptorType = standard.DESCRIPTOR_TYPE_CLASS_SPECIFIC_INTERFACE
+    bDescriptorType = standard.DESCRIPTOR_TYPE_CLASS_SPECIFIC_ENDPOINT
     bDescriptorSubtype = ENDPOINT_DESCRIPTOR_SUBTYPE_GENERAL
     fixed_fmt = "<BBB" + "B" # not including jack list
     fixed_bLength = struct.calcsize(fixed_fmt)
