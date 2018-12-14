@@ -63,7 +63,7 @@ class Header:
                                      self.bDescriptorType,
                                      self.bDescriptorSubtype,
                                      0x0100,
-                                     self.bLength + len(jacks_and_elements_encoded) + 24)
+                                     self.bLength + len(jacks_and_elements_encoded))
         return header_encoded + jacks_and_elements_encoded
 
 class InJackDescriptor:
