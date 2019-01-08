@@ -39,7 +39,7 @@ class AudioControlInterface:
     They have their own bLength, and are not included in this descriptor's bLength.
     """
     bDescriptorType = standard.DESCRIPTOR_TYPE_CLASS_SPECIFIC_INTERFACE
-    bDescriptorSubtype = 0x06
+    bDescriptorSubtype = 0x01
     fixed_fmt = "<BBB" + "HHB"     # not including bSlaveInterface_list
     fixed_bLength = struct.calcsize(fixed_fmt)
 
