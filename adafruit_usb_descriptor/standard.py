@@ -176,9 +176,9 @@ class ConfigurationDescriptor:
                  bNumInterfaces,
                  bConfigurationValue=0x1,
                  iConfiguration=0,
-                 # bus powered (bit 6), no remote wakeup (bit 5),
+                 # bus powered (bit 6), remote wakeup (bit 5),
                  # bit 7 is always 1 and 0-4 are always 0
-                 bmAttributes=0x80,
+                 bmAttributes=0xA0,
                  # 100 mA by default (50 means 100ma)
                  bMaxPower=50):
         self.description = description
