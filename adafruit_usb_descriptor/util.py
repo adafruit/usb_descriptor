@@ -22,7 +22,7 @@
 
 from . import standard
 
-def join_interfaces(*args):
+def join_interfaces(args, *, renumber_endpoints=True):
     """Renumbers interfaces and endpoints so they are compatible.
 
        ``args`` is any number of interface sequences (usually lists with
@@ -40,9 +40,12 @@ def join_interfaces(*args):
             for subdescriptor in interface.subdescriptors:
                 if (subdescriptor.bDescriptorType ==
                         standard.EndpointDescriptor.bDescriptorType):
-                    subdescriptor.bEndpointAddress += base_endpoint_number
-                    endpoint_address = subdescriptor.bEndpointAddress & 0xf
-                    max_endpoint_address = max(max_endpoint_address,
-                                               endpoint_address)
+                    if renumber_endpoints:
+                        subdescriptor.bEndpointAddress += base_endpoint_number
+                        endpoint_address = subdescriptor.bEndpointAddress & 0xf
+                        max_endpoint_address = max(max_endpoint_address,
+                                                endpoint_address)
+                    elif subdescriptor.bEndpointAddress == 0:
+                        raise ValueError('Endpoint address must not be 0')
             base_endpoint_number = max_endpoint_address + 1
     return interfaces
