@@ -38,14 +38,17 @@ def join_interfaces(args, *, renumber_endpoints=True):
             interface.bInterfaceNumber = interfaces.index(interface)
             max_endpoint_address = base_endpoint_number
             for subdescriptor in interface.subdescriptors:
+                endpoint_used = False
                 if (subdescriptor.bDescriptorType ==
                         standard.EndpointDescriptor.bDescriptorType):
                     if renumber_endpoints:
+                        endpoint_used = True
                         subdescriptor.bEndpointAddress += base_endpoint_number
                         endpoint_address = subdescriptor.bEndpointAddress & 0xf
                         max_endpoint_address = max(max_endpoint_address,
                                                 endpoint_address)
                     elif subdescriptor.bEndpointAddress == 0:
                         raise ValueError('Endpoint address must not be 0')
-            base_endpoint_number = max_endpoint_address + 1
+            if endpoint_used:
+                base_endpoint_number = max_endpoint_address + 1
     return interfaces
