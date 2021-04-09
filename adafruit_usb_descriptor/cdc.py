@@ -23,6 +23,7 @@
 import struct
 
 from . import standard
+from .standard import Descriptor
 
 """
 CDC specific descriptors
@@ -50,7 +51,7 @@ CDC_PROTOCOL_NONE = 0x0
 CDC_PROTOCOL_V25TER = 0x01   # Common AT commands
 # Many other protocols omitted.
 
-class Header:
+class Header(Descriptor):
     bDescriptorType = standard.DESCRIPTOR_TYPE_CLASS_SPECIFIC_INTERFACE
     bDescriptorSubtype = 0x00
     fmt = "<BBB" + "H"
@@ -73,7 +74,7 @@ class Header:
                            self.bcdCDC)
 
 
-class CallManagement:
+class CallManagement(Descriptor):
     bDescriptorType = standard.DESCRIPTOR_TYPE_CLASS_SPECIFIC_INTERFACE
     bDescriptorSubtype = 0x01
     fmt = "<BBB" + "BB"
@@ -99,7 +100,7 @@ class CallManagement:
                            self.bDataInterface)
 
 
-class AbstractControlManagement:
+class AbstractControlManagement(Descriptor):
     bDescriptorType = standard.DESCRIPTOR_TYPE_CLASS_SPECIFIC_INTERFACE
     bDescriptorSubtype = 0x02
     fmt = "<BBB" + "B"
@@ -123,7 +124,7 @@ class AbstractControlManagement:
 
 
 
-class DirectLineManagement:
+class DirectLineManagement(Descriptor):
     bDescriptorType = standard.DESCRIPTOR_TYPE_CLASS_SPECIFIC_INTERFACE
     bDescriptorSubtype = 0x03
     fmt = "<BBB" + "B"
@@ -146,7 +147,7 @@ class DirectLineManagement:
                            self.bmCapabilities)
 
 
-class Union:
+class Union(Descriptor):
     bDescriptorType = standard.DESCRIPTOR_TYPE_CLASS_SPECIFIC_INTERFACE
     bDescriptorSubtype = 0x06
     fixed_fmt = "<BBB" + "B"     # not including bSlaveInterface_list
@@ -174,3 +175,27 @@ class Union:
                            self.bDescriptorType,
                            self.bDescriptorSubtype,
                            self.bMasterInterface) + bytes(self.bSlaveInterface_list)
+
+    def interface_indices(self):
+        indices = [3]    # bMasterInterface
+        offset = struct.calcsize(self.fmt)
+        for desc in self.bSlaveInterface_list:
+            indices.extend(offset + offset for offset in desc.interface_indices())
+            offset += len(bytes(desc))
+        return indices
+
+    def endpoint_indices(self):
+        indices = []
+        offset = struct.calcsize(self.fmt)
+        for desc in self.bSlaveInterface_list:
+            indices.extend(offset + offset for offset in desc.endpoint_indices())
+            offset += len(bytes(desc))
+        return indices
+
+    def string_indices(self):
+        indices = []
+        offset = struct.calcsize(self.fmt)
+        for desc in self.bSlaveInterface_list:
+            indices.extend(offset + offset for offset in desc.string_indices())
+            offset += len(bytes(desc))
+        return indices

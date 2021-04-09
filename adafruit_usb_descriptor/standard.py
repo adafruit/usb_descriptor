@@ -28,7 +28,20 @@ DESCRIPTOR_TYPE_CLASS_SPECIFIC_STRING = 0x23
 DESCRIPTOR_TYPE_CLASS_SPECIFIC_INTERFACE = 0x24
 DESCRIPTOR_TYPE_CLASS_SPECIFIC_ENDPOINT = 0x25
 
-class EndpointDescriptor:
+class Descriptor:
+    """Abstract class with default implementations."""
+
+    def interface_indices(self):
+        return ()
+
+    def endpoint_indices(self):
+        return ()
+
+    def string_indices(self):
+        return ()
+
+
+class EndpointDescriptor(Descriptor):
     """Single endpoint configuration"""
     bDescriptorType = 0x5
     fmt = "<BB" + "BBHB"
@@ -68,8 +81,11 @@ class EndpointDescriptor:
                            self.wMaxPacketSize,
                            self.bInterval)
 
+    def endpoint_indices(self):
+        return (2,)    # bEndpointAddressOffset
 
-class InterfaceDescriptor:
+
+class InterfaceDescriptor(Descriptor):
     """Single interface that includes ``subdescriptors`` such as endpoints.
 
     ``subdescriptors`` can also include other class and vendor specific
@@ -113,6 +129,7 @@ class InterfaceDescriptor:
             subdescriptor_bytes.append(bytes(desc))
             if desc.bDescriptorType == EndpointDescriptor.bDescriptorType:
                 endpoint_count += 1
+
         self.bNumEndpoints = endpoint_count
         initial_bytes = struct.pack(self.fmt,
                                     self.bLength,
@@ -126,8 +143,32 @@ class InterfaceDescriptor:
                                     self.iInterface)
         return initial_bytes + b''.join(subdescriptor_bytes)
 
+    def interface_indices(self):
+        indices = [2]    # bInterfaceNumber
+        offset = struct.calcsize(self.fmt)
+        for desc in self.subdescriptors:
+            indices.extend(offset + offset for offset in desc.interface_indices())
+            offset += len(bytes(desc))
+        return indices
 
-class InterfaceAssociationDescriptor:
+    def endpoint_indices(self):
+        indices = []
+        offset = struct.calcsize(self.fmt)
+        for desc in self.subdescriptors:
+            indices.extend(offset + offset for offset in desc.endpoint_indices())
+            offset += len(bytes(desc))
+        return indices
+
+    def string_indices(self):
+        indices = [8]    # iInterface
+        offset = struct.calcsize(self.fmt)
+        for desc in self.subdescriptors:
+            indices.extend(offset + offset for offset in desc.string_indices())
+            offset += len(bytes(desc))
+        return indices
+
+
+class InterfaceAssociationDescriptor(Descriptor):
     """Groups interfaces into a single function"""
     bDescriptorType = 0xB
     fmt = "<BB" + "B"*6
@@ -163,8 +204,14 @@ class InterfaceAssociationDescriptor:
                            self.bFunctionProtocol,
                            self.iFunction)
 
+    def interface_indices(self):
+        return (2,)    # bFirstInterface
 
-class ConfigurationDescriptor:
+    def string_indices(self):
+        return (7,)    # iFunction
+
+
+class ConfigurationDescriptor(Descriptor):
     """High level configuration that prepends the interfaces."""
     bDescriptorType = 0x2
     fmt = "<BB" + "HBBBBB"
@@ -203,8 +250,14 @@ class ConfigurationDescriptor:
                            self.bmAttributes,
                            self.bMaxPower)
 
+    def interface_indices(self):
+        return (2,)    # bFirstInterface
 
-class DeviceDescriptor:
+    def string_indices(self):
+        return (7,)    # iFunction
+
+
+class DeviceDescriptor(Descriptor):
     """Holds basic device level info."""
     bDescriptorType = 0x1
     fmt = "<BB" + "HBBBBHHHBBBB"
@@ -258,8 +311,11 @@ class DeviceDescriptor:
                            self.iSerialNumber,
                            self.bNumConfigurations)
 
+    def string_indices(self):
+        return (10, 11, 12)    # iManufacturer, iProduct, iSerialNumber
 
-class StringDescriptor:
+
+class StringDescriptor(Descriptor):
     """Holds a string referenced by another descriptor by index.
 
        It's recommended to hold these in a dict or list and look them up in subsequent

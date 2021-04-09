@@ -23,6 +23,7 @@
 import struct
 
 from . import standard
+from .standard import Descriptor
 
 """
 Audio specific descriptors
@@ -31,7 +32,7 @@ Audio specific descriptors
 * Author(s): Scott Shawcroft
 """
 
-class AudioControlInterface:
+class AudioControlInterface(Descriptor):
     """Single interface that includes ``subdescriptors`` such as endpoints.
 
     ``subdescriptors`` can also include other class and vendor specific
@@ -79,7 +80,44 @@ class AudioControlInterface:
                            wTotalLength,
                            len(baInterfaceNr)) + baInterfaceNr + units_and_terminals + subinterfaces
 
-class TerminalDescriptor:
+    def interface_indices(self):
+        offset = struct.calcsize(self.fmt)
+        # Include every byte in baInterfaceNr.
+        indices = [offset + i for i in range(len(baInterfaceNr))]
+
+        offset += len(baInterfaceNr)
+        for desc in self.units_and_terminals:
+            indices.extend(offset + offset for offset in desc.interface_indices())
+            offset += len(bytes(desc))
+        for desc in self.subinterfaces:
+            indices.extend(offset + offset for offset in desc.interface_indices())
+            offset += len(bytes(desc))
+        return indices
+
+    def endpoint_indices(self):
+        indices = []
+        offset = struct.calcsize(self.fmt) + len(baInterfaceNr)
+        for desc in self.units_and_terminals:
+            indices.extend(offset + offset for offset in desc.endpoint_indices())
+            offset += len(bytes(desc))
+        for desc in self.subinterfaces:
+            indices.extend(offset + offset for offset in desc.endpoint_indices())
+            offset += len(bytes(desc))
+        return indices
+
+    def string_indices(self):
+        indices = []
+        offset = struct.calcsize(self.fmt) + len(baInterfaceNr)
+        for desc in self.units_and_terminals:
+            indices.extend(offset + offset for offset in desc.string_indices())
+            offset += len(bytes(desc))
+        for desc in self.subinterfaces:
+            indices.extend(offset + offset for offset in desc.string_indices())
+            offset += len(bytes(desc))
+        return indices
+
+
+class TerminalDescriptor(Descriptor):
     bLength = None
     bDescriptorType = None
     bDescriptorSubtype = None
