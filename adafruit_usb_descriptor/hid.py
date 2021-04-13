@@ -83,174 +83,331 @@ class ReportDescriptor:
                  description,
                  usage_page,
                  usage,
+                 report_length,
+                 out_report_length,
+                 report_id=0,
                  report_descriptor_before_report_id,
                  report_descriptor_after_report_id,
-                 report_length,
-                 out_report_length):
+    ):
         self.description = description
-        self.report_descriptor = report_descriptor
+        self.usage_page = usage_page
+        self.usage = usage
         self.report_length = report_length
         self.out_report_length = out_report_length
+        self.report_id = report_id
+        self.report_descriptor_before_report_id = report_descriptor_before_report_id
+        self.report_descriptor_after_report_id = report_descriptor_after_report_id
 
-    def report
+    def report_id_bytes(self):
+        """If report_id is None, no report_id is included."""
+        if self.report_id is None:
+            return b""
+        else:
+            return bytes((0x85, self.report_id))
+
+    def report_id_index(self):
+        """Return the location of the Report ID in the descriptor."""
+        if self.report_id is None:
+            return None
+        return len(self.report_descriptor_before_report_id)
+
     def notes(self):
         return [str(self)]
 
     def __bytes__(self):
-        return self.report_descriptor
+        return (
+            self.report_descriptor_before_report_id +
+            self.report_id_bytes() +
+            self.report_descriptor_after_report_id)
 
-ReportDescriptor.KEYBOARD = ReportDescriptor(
-    description="KEYBOARD",
-    usage_page=0x01,
-    usage=0x06,
-    report_descriptor_before_report_id=bytes(
+    @staticmethod
+    def keyboard(report_id):
+        return ReportDescriptor(
+            description="KEYBOARD",
+            usage_page=0x01,
+            usage=0x06,
+            report_length=8,
+            out_report_length=1,
+            report_id=report_id,
+            report_descriptor_before_report_id=(
+                # Regular keyboard
+                b"\x05\x01"  # Usage Page (Generic Desktop)
+                b"\x09\x06"  # Usage (Keyboard)
+                b"\xA1\x01"  # Collection (Application)
+            ),
+            report_descriptor_after_report_id=(
+                b"\x05\x07"  #   Usage Page (Keyboard)
+                b"\x19, 224"  #   Usage Minimum (224)
+                b"\x29, 231"  #   Usage Maximum (231)
+                b"\x15\x00"  #   Logical Minimum (0)
+                b"\x25\x01"  #   Logical Maximum (1)
+                b"\x75\x01"  #   Report Size (1)
+                b"\x95\x08"  #   Report Count (8)
+                b"\x81\x02"  #   Input (Data, Variable, Absolute)
+                b"\x81\x01"  #   Input (Constant)
+                b"\x19\x00"  #   Usage Minimum (0)
+                b"\x29\xDD"  #   Usage Maximum (221)
+                b"\x15\x00"  #   Logical Minimum (0)
+                b"\x25\xDD"  #   Logical Maximum (221)
+                b"\x75\x08"  #   Report Size (8)
+                b"\x95\x06"  #   Report Count (6)
+                b"\x81\x00"  #   Input (Data, Array)
+                b"\x05\x08"  #   Usage Page (LED)
+                b"\x19\x01"  #   Usage Minimum (1)
+                b"\x29\x05"  #   Usage Maximum (5)
+                b"\x15\x00"  #   Logical Minimum (0)
+                b"\x25\x01"  #   Logical Maximum (1)
+                b"\x75\x01"  #   Report Size (1)
+                b"\x95\x05"  #   Report Count (5)
+                b"\x91\x02"  #   Output (Data, Variable, Absolute)
+                b"\x95\x03"  #   Report Count (3)
+                b"\x91\x01"  #   Output (Constant)
+                b"\xC0,"  # End Collection
+            ),
+        )
 
-ReportDescriptor.GENERIC_MOUSE_REPORT = ReportDescriptor(
-    description="GENERIC_MOUSE_REPORT",
-    report_descriptor=bytes([
-        0x05, 0x01,     # Usage Page (Generic Desktop),
-        0x09, 0x02,     # Usage (Mouse),
-        0xA1, 0x01,     #  Collection (Application),
-        0x09, 0x01,     #   Usage (Pointer),
-        0xA1, 0x00,     #  Collection (Physical),
-        0x05, 0x09,     #     Usage Page (Buttons),
-        0x19, 0x01,     #     Usage Minimum (01),
-        0x29, 0x03,     #     Usage Maximum (03),
-        0x15, 0x00,     #     Logical Minimum (0),
-        0x25, 0x01,     #     Logical Maximum (1),
-        0x75, 0x01,     #     Report Size (1),
-        0x95, 0x03,     #     Report Count (3),
-        0x81, 0x02,     #     Input (Data, Variable, Absolute)
-        0x75, 0x05,     #     Report Size (5),
-        0x95, 0x01,     #     Report Count (1),
-        0x81, 0x01,     #     Input (Constant),
-        0x05, 0x01,     #     Usage Page (Generic Desktop),
-        0x09, 0x30,     #     Usage (X),
-        0x09, 0x31,     #     Usage (Y),
-        0x09, 0x38,     #     Usage (Scroll),
-        0x15, 0x81,     #     Logical Minimum (-127),
-        0x25, 0x7F,     #     Logical Maximum (127),
-        0x75, 0x08,     #     Report Size (8),
-        0x95, 0x03,     #     Report Count (3),
-        0x81, 0x06,     #     Input (Data, Variable, Relative)
-        0xC0,           #  End Collection,
-        0xC0,           # End Collection
-    ]))
+    @staticmethod
+    def mouse(report_id):
+        return ReportDescriptor(
+            description="MOUSE",
+            usage_page=0x01,
+            usage=0x02,
+            report_length=4,
+            out_report_length=0,
+            report_id=report_id,
+            report_descriptor_before_report_id=(
+                # Regular mouse
+                b"\x05\x01"  # Usage Page (Generic Desktop)
+                b"\x09\x02"  # Usage (Mouse)
+                b"\xA1\x01"  # Collection (Application)
+                b"\x09\x01"  #   Usage (Pointer)
+                b"\xA1\x00"  #   Collection (Physical)
+            ),
+            report_descriptor_after_report_id=(
+                b"\x05\x09"  #     Usage Page (Button)
+                b"\x19\x01"  #     Usage Minimum (1)
+                b"\x29\x05"  #     Usage Maximum (5)
+                b"\x15\x00"  #     Logical Minimum (0)
+                b"\x25\x01"  #     Logical Maximum (1)
+                b"\x95\x05"  #     Report Count (5)
+                b"\x75\x01"  #     Report Size (1)
+                b"\x81\x02"  #     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+                b"\x95\x01"  #     Report Count (1)
+                b"\x75\x03"  #     Report Size (3)
+                b"\x81\x01"  #     Input (Const,Array,Abs,No Wrap,Linear,Preferred State,No Null Position)
+                b"\x05\x01"  #     Usage Page (Generic Desktop Ctrls)
+                b"\x09\x30"  #     Usage (X)
+                b"\x09\x31"  #     Usage (Y)
+                b"\x15\x81"  #     Logical Minimum (-127)
+                b"\x25\x7F"  #     Logical Maximum (127)
+                b"\x75\x08"  #     Report Size (8)
+                b"\x95\x02"  #     Report Count (2)
+                b"\x81\x06"  #     Input (Data,Var,Rel,No Wrap,Linear,Preferred State,No Null Position)
+                b"\x09\x38"  #     Usage (Wheel)
+                b"\x15\x81"  #     Logical Minimum (-127)
+                b"\x25\x7F"  #     Logical Maximum (127)
+                b"\x75\x08"  #     Report Size (8)
+                b"\x95\x01"  #     Report Count (1)
+                b"\x81\x06"  #     Input (Data,Var,Rel,No Wrap,Linear,Preferred State,No Null Position)
+                b"\xC0,"  #   End Collection
+                b"\xC0,"  # End Collection
+            ),
+        )
 
+    @staticmethod
+    def consumer_control(report_id):
+        return ReportDescriptor(
+            description="CONSUMER",
+            usage_page=0x0C,
+            usage=0x01,
+            report_length=2,
+            out_report_length=0,
+            report_id=report_id,
+            report_descriptor_before_report_id=(
+                # Consumer ("multimedia") keys
+                b"\x05\x0C"  # Usage Page (Consumer)
+                b"\x09\x01"  # Usage (Consumer Control)
+                b"\xA1\x01"  # Collection (Application)
+            ),
+            report_descriptor_after_report_id=(
+                b"\x75\x10"  #   Report Size (16)
+                b"\x95\x01"  #   Report Count (1)
+                b"\x15\x01"  #   Logical Minimum (1)
+                b"\x26\x8C\x02"  #   Logical Maximum (652)
+                b"\x19\x01"  #   Usage Minimum (Consumer Control)
+                b"\x2A\x8C\x02"  #   Usage Maximum (AC Send)
+                b"\x81\x00"  #   Input (Data,Array,Abs,No Wrap,Linear,Preferred State,No Null Position)
+                b"\xC0,"  # End Collection
+            ),
+        )
 
-# Use these report ids for all multi-report HID descriptors.
+    @staticmethod
+    def sys_control(report_id):
+        return ReportDescriptor(
+            description="SYS_CONTROL",
+            usage_page=0x01,
+            usage=0x80,
+            report_length=1,
+            out_report_length=0,
+            report_id=report_id,
+            report_descriptor_before_report_id=(
+                # Power controls
+                b"\x05\x01"  # Usage Page (Generic Desktop Ctrls)
+                b"\x09\x80"  # Usage (Sys Control)
+                b"\xA1\x01"  # Collection (Application)
+            ),
+            report_descriptor_after_report_id=(
+                b"\x75\x02"  #   Report Size (2)
+                b"\x95\x01"  #   Report Count (1)
+                b"\x15\x01"  #   Logical Minimum (1)
+                b"\x25\x03"  #   Logical Maximum (3)
+                b"\x09\x82"  #   Usage (Sys Sleep)
+                b"\x09\x81"  #   Usage (Sys Power Down)
+                b"\x09\x83"  #   Usage (Sys Wake Up)
+                b"\x81\x60"  #   Input (Data,Array,Abs,No Wrap,Linear,No Preferred State,Null State)
+                b"\x75\x06"  #   Report Size (6)
+                b"\x81\x03"  #   Input (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+                b"\xC0,"  # End Collection
+            ),
+        )
 
-ReportDescriptor.REPORT_IDS = {
-    "KEYBOARD" : 1,
-    "MOUSE" : 2,
-    "CONSUMER" : 3,
-    "SYS_CONTROL" : 4,
-    }
+    @staticmethod
+    def gamepad(report_id):
+        return ReportDescriptor(
+            description="GAMEPAD",
+            usage_page=0x01,
+            usage=0x05,
+            report_length=6,
+            out_report_length=0,
+            report_id=report_id,
+            report_descriptor_before_report_id=(
+                b"\x05\x01"  # Usage Page (Generic Desktop)
+                b"\x05\x05"  # Usage (Keyboard)
+                b"\xA1\x01"  # Collection (Application)
+            ),
+            report_descriptor_after_report_id=(
+                b"\x05\x09"  #   Usage Page (Button)
+                b"\x19\x01"  #   Usage Minimum (Button 1)
+                b"\x29\x10"  #   Usage Maximum (Button 16)
+                b"\x15\x00"  #   Logical Minimum (0)
+                b"\x25\x01"  #   Logical Maximum (1)
+                b"\x75\x01"  #   Report Size (1)
+                b"\x95\x10"  #   Report Count (16)
+                b"\x81\x02"  #   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+                b"\x05\x01"  #   Usage Page (Generic Desktop Ctrls)
+                b"\x15\x81"  #   Logical Minimum (-127)
+                b"\x25\x7F"  #   Logical Maximum (127)
+                b"\x09\x30"  #   Usage (X)
+                b"\x09\x31"  #   Usage (Y)
+                b"\x09\x32"  #   Usage (Z)
+                b"\x09\x35"  #   Usage (Rz)
+                b"\x75\x08"  #   Report Size (8)
+                b"\x95\x04"  #   Report Count (4)
+                b"\x81\x02"  #   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+                b"\xC0,"  # End Collection
+            ),
+        )
 
-# Byte count for each kind of report. Length does not include report ID in first byte.
-ReportDescriptor.REPORT_LENGTHS = {
-    "KEYBOARD" : 8,
-    "MOUSE" : 4,
-    "CONSUMER" : 2,
-    "SYS_CONTROL" : 1,
-    }
+    @staticmethod
+    def digitizer(report_id):
+        return ReportDescriptor(
+            description="DIGITIZER",
+            usage_page=0x0D,
+            usage=0x02,
+            report_length=5,
+            out_report_length=0,
+            report_descriptor_before_report_id=(
+                b"\x05\x0D"  # Usage Page (Digitizers)
+                b"\x09\x02"  # Usage (Pen)
+                b"\xA1\x01"  # Collection (Application)
+            ),
+            report_descriptor_after_report_id=(
+                b"\x09\x01"  #   Usage (Stylus)
+                b"\xA1\x00"  #   Collection (Physical)
+                b"\x09\x32"  #     Usage (In-Range)
+                b"\x09\x42"  #     Usage (Tip Switch)
+                b"\x09\x44"  #     Usage (Barrel Switch)
+                b"\x09\x45"  #     Usage (Eraser Switch)
+                b"\x15\x00"  #     Logical Minimum (0)
+                b"\x25\x01"  #     Logical Maximum (1)
+                b"\x75\x01"  #     Report Size (1)
+                b"\x95\x04"  #     Report Count (4)
+                b"\x81\x02"  #     Input (Data,Var,Abs)
+                b"\x75\x04"  #     Report Size (4) -- Filler
+                b"\x95\x01"  #     Report Count (1) -- Filler
+                b"\x81\x01"  #     Input (Const,Array,Abs,No Wrap,Linear,Preferred State,No Null Position)
+                b"\x05\x01"  #     Usage Page (Generic Desktop Ctrls)
+                b"\x15\x00"  #     Logical Minimum (0)
+                b"\x26\xFF\x7F"  #     Logical Maximum (32767)
+                b"\x09\x30"  #     Usage (X)
+                b"\x09\x31"  #     Usage (Y)
+                b"\x75\x10"  #     Report Size (16)
+                b"\x95\x02"  #     Report Count (2)
+                b"\x81\x02"  #     Input (Data,Var,Abs)
+                b"\xC0,"  #   End Collection
+                b"\xC0,"  # End Collection
+            ),
+        )
 
-ReportDescriptor.MOUSE_KEYBOARD_CONSUMER_SYS_CONTROL_REPORT = ReportDescriptor(
-    description="MOUSE_KEYBOARD_CONSUMER_SYS_CONTROL_REPORT",
-    report_descriptor=bytes([
-        # Regular keyboard
-        0x05, 0x01,                 # Usage Page (Generic Desktop)
-        0x09, 0x06,                 # Usage (Keyboard)
-        0xA1, 0x01,                 # Collection (Application)
-        0x85, ReportDescriptor.REPORT_IDS["KEYBOARD"], #   Report ID (1)
-        0x05, 0x07,                 #   Usage Page (Keyboard)
-        0x19, 224,                  #   Usage Minimum (224)
-        0x29, 231,                  #   Usage Maximum (231)
-        0x15, 0x00,                 #   Logical Minimum (0)
-        0x25, 0x01,                 #   Logical Maximum (1)
-        0x75, 0x01,                 #   Report Size (1)
-        0x95, 0x08,                 #   Report Count (8)
-        0x81, 0x02,                 #   Input (Data, Variable, Absolute)
-        0x81, 0x01,                 #   Input (Constant)
-        0x19, 0x00,                 #   Usage Minimum (0)
-        0x29, 101,                  #   Usage Maximum (101)
-        0x15, 0x00,                 #   Logical Minimum (0)
-        0x25, 101,                  #   Logical Maximum (101)
-        0x75, 0x08,                 #   Report Size (8)
-        0x95, 0x06,                 #   Report Count (6)
-        0x81, 0x00,                 #   Input (Data, Array)
-        0x05, 0x08,                 #   Usage Page (LED)
-        0x19, 0x01,                 #   Usage Minimum (1)
-        0x29, 0x05,                 #   Usage Maximum (5)
-        0x15, 0x00,                 #   Logical Minimum (0)
-        0x25, 0x01,                 #   Logical Maximum (1)
-        0x75, 0x01,                 #   Report Size (1)
-        0x95, 0x05,                 #   Report Count (5)
-        0x91, 0x02,                 #   Output (Data, Variable, Absolute)
-        0x95, 0x03,                 #   Report Count (3)
-        0x91, 0x01,                 #   Output (Constant)
-        0xC0,                       # End Collection
-        # Regular mouse
-        0x05, 0x01,        # Usage Page (Generic Desktop)
-        0x09, 0x02,        # Usage (Mouse)
-        0xA1, 0x01,        # Collection (Application)
-        0x09, 0x01,        #   Usage (Pointer)
-        0xA1, 0x00,        #   Collection (Physical)
-        0x85, ReportDescriptor.REPORT_IDS["MOUSE"], # Report ID (n)
-        0x05, 0x09,        #     Usage Page (Button)
-        0x19, 0x01,        #     Usage Minimum (0x01)
-        0x29, 0x05,        #     Usage Maximum (0x05)
-        0x15, 0x00,        #     Logical Minimum (0)
-        0x25, 0x01,        #     Logical Maximum (1)
-        0x95, 0x05,        #     Report Count (5)
-        0x75, 0x01,        #     Report Size (1)
-        0x81, 0x02,        #     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-        0x95, 0x01,        #     Report Count (1)
-        0x75, 0x03,        #     Report Size (3)
-        0x81, 0x01,        #     Input (Const,Array,Abs,No Wrap,Linear,Preferred State,No Null Position)
-        0x05, 0x01,        #     Usage Page (Generic Desktop Ctrls)
-        0x09, 0x30,        #     Usage (X)
-        0x09, 0x31,        #     Usage (Y)
-        0x15, 0x81,        #     Logical Minimum (-127)
-        0x25, 0x7F,        #     Logical Maximum (127)
-        0x75, 0x08,        #     Report Size (8)
-        0x95, 0x02,        #     Report Count (2)
-        0x81, 0x06,        #     Input (Data,Var,Rel,No Wrap,Linear,Preferred State,No Null Position)
-        0x09, 0x38,        #     Usage (Wheel)
-        0x15, 0x81,        #     Logical Minimum (-127)
-        0x25, 0x7F,        #     Logical Maximum (127)
-        0x75, 0x08,        #     Report Size (8)
-        0x95, 0x01,        #     Report Count (1)
-        0x81, 0x06,        #     Input (Data,Var,Rel,No Wrap,Linear,Preferred State,No Null Position)
-        0xC0,              #   End Collection
-        0xC0,              # End Collection
-        # Consumer ("multimedia") keys
-        0x05, 0x0C,        # Usage Page (Consumer)
-        0x09, 0x01,        # Usage (Consumer Control)
-        0xA1, 0x01,        # Collection (Application)
-        0x85, ReportDescriptor.REPORT_IDS["CONSUMER"], # Report ID (n)
-        0x75, 0x10,        #   Report Size (16)
-        0x95, 0x01,        #   Report Count (1)
-        0x15, 0x01,        #   Logical Minimum (1)
-        0x26, 0x8C, 0x02,  #   Logical Maximum (652)
-        0x19, 0x01,        #   Usage Minimum (Consumer Control)
-        0x2A, 0x8C, 0x02,  #   Usage Maximum (AC Send)
-        0x81, 0x00,        #   Input (Data,Array,Abs,No Wrap,Linear,Preferred State,No Null Position)
-        0xC0,              # End Collection
-        # Power controls
-        0x05, 0x01,        # Usage Page (Generic Desktop Ctrls)
-        0x09, 0x80,        # Usage (Sys Control)
-        0xA1, 0x01,        # Collection (Application)
-        0x85, ReportDescriptor.REPORT_IDS["SYS_CONTROL"], # Report ID (n)
-        0x75, 0x02,        #   Report Size (2)
-        0x95, 0x01,        #   Report Count (1)
-        0x15, 0x01,        #   Logical Minimum (1)
-        0x25, 0x03,        #   Logical Maximum (3)
-        0x09, 0x82,        #   Usage (Sys Sleep)
-        0x09, 0x81,        #   Usage (Sys Power Down)
-        0x09, 0x83,        #   Usage (Sys Wake Up)
-        0x81, 0x60,        #   Input (Data,Array,Abs,No Wrap,Linear,No Preferred State,Null State)
-        0x75, 0x06,        #   Report Size (6)
-        0x81, 0x03,        #   Input (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-        0xC0,              # End Collection
-    ]))
+    @staticmethod
+    def xac_compatible_gamepad(report_id):
+        return ReportDescriptor(
+            description="XAC_COMPATIBLE_GAMEPAD",
+            usage_page=0x01,
+            usage=0x05,
+            report_length=3,
+            out_report_length=0,
+            report_descriptor_before_report_id=(
+                b"\x05\x01"  #  Usage Page (Desktop)
+                b"\x09\x05"  #  Usage (Gamepad)
+                b"\xA1\x01"  #  Collection (Application)
+            ),
+            report_descriptor_after_report_id=(
+                b"\x15\x00"  #      Logical Minimum (0)
+                b"\x25\x01"  #      Logical Maximum (1)
+                b"\x35\x00"  #      Physical Minimum (0)
+                b"\x45\x01"  #      Physical Maximum (1)
+                b"\x75\x01"  #      Report Size (1)
+                b"\x95\x08"  #      Report Count (8)
+                b"\x05\x09"  #      Usage Page (Button)
+                b"\x19\x01"  #      Usage Minimum (1)
+                b"\x29\x08"  #      Usage Maximum (8)
+                b"\x81\x02"  #      Input (Variable)
+                b"\x05\x01"  #      Usage Page (Desktop)
+                b"\x26\xFF\x00"  #      Logical Maximum (255)
+                b"\x46\xFF\x00"  #      Physical Maximum (255)
+                b"\x09\x30"  #      Usage (X)
+                b"\x09\x31"  #      Usage (Y)
+                b"\x75\x08"  #      Report Size (8)
+                b"\x95\x02"  #      Report Count (2)
+                b"\x81\x02"  #      Input (Variable)
+                b"\xC0,"  #  End Collection
+            ),
+        )
+
+    @staticmethod
+    def raw():
+        return ReportDescriptor(
+            description="RAW",
+            usage_page=0xFFAF,
+            usage=0xAF,
+            report_length=64,
+            out_report_length=0,
+            report_id=None,
+            report_descriptor_before_report_id=(
+                b"\x06\xAF\xFF"  #  Usage Page (Vendor 0xFFAF "Adafruit")
+                b"\x09\xAF"  #  Usage (AF)
+                b"\xA1\x01"  #  Collection (Application)
+                b"\x75\x08"  #      Report Size (8)
+                b"\x15\x00"  #      Logical Minimum (0)
+                b"\x26\xFF\x00"  #      Logical Maximum (255)
+                b"\x95\x08"  #      Report Count (8)
+                b"\x09\x01"  #      Usage(xxx)
+                b"\x81\x02"  #      Input (Variable)
+                b"\x95\x08"  #      Report Count (8)
+                b"\x09\x02"  #      Usage(xxx)
+                b"\x91\x02"  #      Input (Variable)
+                b"\xC0,"  #  End Collection
+            ),
+            report_descriptor_after_report_id=b"",
+        )
