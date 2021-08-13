@@ -1,3 +1,5 @@
+*This repo is archived because it is no longer used by CircuitPython. We recommend https://github.com/usb-tools/python-usb-protocol instead.*
+
 
 Introduction
 ============
